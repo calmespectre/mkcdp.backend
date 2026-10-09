@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html><body style="font-family:Arial,sans-serif;color:#111;">
+<h2 style="color:#14532D;">Bank transfer instructions</h2>
+<p>Reference: <strong>{{ instructions.reference }}</strong></p>
+<p>Amount: <strong>KES {{ instructions.amount_kes }}</strong></p>
+<table style="border-collapse:collapse;">
+<tr><td>Bank</td><td>{{ instructions.bank_name }}</td></tr>
+<tr><td>Account name</td><td>{{ instructions.account_name }}</td></tr>
+<tr><td>Account number</td><td>{{ instructions.account_number }}</td></tr>
+<tr><td>Branch</td><td>{{ instructions.branch }}</td></tr>
+<tr><td>SWIFT</td><td>{{ instructions.swift }}</td></tr>
+</table>
+<p>{{ instructions.note }}</p>
+</body></html>

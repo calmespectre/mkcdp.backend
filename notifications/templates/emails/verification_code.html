@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html><body style="font-family:Arial,sans-serif;color:#111;padding:24px;background:#FBF7F0;">
+<div style="max-width:520px;margin:0 auto;background:#fff;border:1px solid rgba(20,83,45,0.15);border-radius:16px;padding:32px;">
+  <p style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#14532D;font-weight:700;margin:0 0 12px;">
+    MKCDP{% if purpose == "signup" %} · Confirm your account{% else %} · Sign in code{% endif %}
+  </p>
+  <h1 style="font-family:Georgia,serif;font-size:22px;color:#111;margin:0 0 12px;">
+    {% if purpose == "signup" %}Confirm your email{% else %}Your sign-in code{% endif %}
+  </h1>
+  <p style="font-size:14px;color:#4A4A42;line-height:1.6;margin:0 0 20px;">
+    {% if user.username %}Hi {{ user.username }},{% else %}Hello,{% endif %}
+    use the code below to {% if purpose == "signup" %}verify your account{% else %}complete sign-in{% endif %}. This code expires in {{ expires_minutes }} minutes.
+  </p>
+  <div style="text-align:center;background:#14532D;color:#FBF7F0;font-size:34px;font-weight:700;letter-spacing:8px;padding:20px;border-radius:12px;font-family:Georgia,serif;">
+    {{ code }}
+  </div>
+  <p style="font-size:12px;color:#4A4A42;margin-top:24px;line-height:1.6;">
+    If you didn't request this, you can safely ignore this email.
+  </p>
+  <p style="font-size:11px;color:#4A4A42;opacity:0.75;margin-top:20px;">MKCDP · Nairobi, Kenya</p>
+</div>
+</body></html>

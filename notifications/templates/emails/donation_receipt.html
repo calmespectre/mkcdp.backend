@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html><body style="font-family:Arial,sans-serif;color:#111;">
+<h2 style="color:#14532D;">Thank you, {{ donation.first_name }}.</h2>
+<p>Your gift of <strong>{{ donation.requested_currency }} {{ donation.requested_amount }}</strong> (KES {{ donation.amount_kes }}) has been received.</p>
+<table style="border-collapse:collapse;">
+<tr><td><strong>Reference</strong></td><td>{{ donation.reference }}</td></tr>
+<tr><td><strong>Payment</strong></td><td>{{ payment.method }} / {{ payment.status }}</td></tr>
+<tr><td><strong>Receipt</strong></td><td>{{ payment.receipt_number }}</td></tr>
+<tr><td><strong>Frequency</strong></td><td>{{ donation.frequency }}</td></tr>
+</table>
+<p style="color:#4A4A42;font-size:12px;">MKCDP · Nairobi, Kenya</p>
+</body></html>
