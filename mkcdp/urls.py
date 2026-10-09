@@ -10,10 +10,11 @@ urlpatterns = [
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="docs"),
 
     path("api/auth/", include("accounts.urls")),
-
-    path("api/content/", include("content.urls")),
     path("api/site-content/", include("content.urls")),
     path("api/sitecontent/", include("content.urls")),
+    path("api/content/", include("content.urls")),
+
+    path("api/publications/", include("publications.urls")),   # <-- add this
 
     path("api/donations/", include("donations.urls")),
     path("api/payments/", include("payments.urls")),
@@ -24,6 +25,9 @@ urlpatterns = [
     path("api/safeguarding/", include("safeguarding.urls")),
     path("api/dashboard/", include("dashboard.urls")),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

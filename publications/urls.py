@@ -1,8 +1,7 @@
-from django.urls import path
+from rest_framework.routers import DefaultRouter
+from .views import PublicationViewSet
 
-from .views import PublicationListView, PublicationDetailView
+router = DefaultRouter()
+router.register("", PublicationViewSet, basename="publication")
 
-urlpatterns = [
-    path("", PublicationListView.as_view()),
-    path("<int:pk>/", PublicationDetailView.as_view()),
-]
+urlpatterns = router.urls

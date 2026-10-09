@@ -1,13 +1,12 @@
 from django.contrib import admin
-
 from .models import Publication
 
 
 @admin.register(Publication)
 class PublicationAdmin(admin.ModelAdmin):
-    list_display = ("title", "category", "year", "published", "file_type", "file_size", "created_at")
-    list_filter = ("category", "published", "year")
-    search_fields = ("title", "description", "slug")
-    prepopulated_fields = {"slug": ("title",)}
-    ordering = ("-year", "order", "-created_at")
-    readonly_fields = ("file_size", "file_type", "created_at", "updated_at")
+    list_display = ("title", "category", "year", "file_type", "published", "created_at")
+    list_filter = ("category", "year", "published", "file_type")
+    search_fields = ("title", "description")
+    readonly_fields = ("id", "slug", "file_size", "file_type", "created_at", "updated_at")
+    date_hierarchy = "created_at"
+    ordering = ("-year", "-created_at")

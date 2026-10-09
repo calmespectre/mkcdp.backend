@@ -1,18 +1,10 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from .views import (
-    SiteContentViewSet,
-    ContentRevisionViewSet,
-    bulk_content,
-    bulk_update_content,
-)
-
-router = DefaultRouter()
-router.register("revisions", ContentRevisionViewSet, basename="content-revisions")
-router.register("", SiteContentViewSet, basename="content")
+from django.urls import path
+from . import views
 
 urlpatterns = [
-    path("bulk/", bulk_content, name="content-bulk"),
-    path("bulk-update/", bulk_update_content, name="content-bulk-update"),
-    path("", include(router.urls)),
+    path("bulk/", views.site_content_bulk, name="site-content-bulk"),
+    path("reset/", views.site_content_reset, name="site-content-reset"),
+    path("upload/", views.site_content_upload, name="site-content-upload"),
+    path("<str:key>/", views.site_content_item, name="site-content-item"),
+    path("", views.site_content_root, name="site-content-root"),
 ]

@@ -1,75 +1,79 @@
-import os
+import uuid
 from django.conf import settings
 from django.db import models
 from django.utils.text import slugify
+from core.models import TimeStampedModel
 
 
-class Publication(models.Model):
-    CATEGORY_ANNUAL = "annual-report"
-    CATEGORY_FINANCIAL = "financial-statement"
-    CATEGORY_STRATEGIC = "strategic-plan"
-    CATEGORY_IMPACT = "impact-report"
-    CATEGORY_NEWSLETTER = "newsletter"
-    CATEGORY_POLICY = "policy"
-    CATEGORY_OTHER = "other"
-
-    CATEGORY_CHOICES = [
-        (CATEGORY_ANNUAL, "Annual Report"),
-        (CATEGORY_FINANCIAL, "Financial Statement"),
-        (CATEGORY_STRATEGIC, "Strategic Plan"),
-        (CATEGORY_IMPACT, "Impact Report"),
-        (CATEGORY_NEWSLETTER, "Newsletter"),
-        (CATEGORY_POLICY, "Policy Document"),
-        (CATEGORY_OTHER, "Other"),
+class Publication(TimeStampedModel):
+    CATEGORIES = [
+        ("annual-report", "Annual Report"),
+        ("financial-statement", "Financial Statement"),
+        ("strategic-plan", "Strategic Plan"),
+        ("impact-report", "Impact Report"),
+        ("newsletter", "Newsletter"),
+        ("policy", "Policy Document"),
+        ("other", "Other"),
     ]
 
-    title = models.CharField(max_length=255)
-    slug = models.SlugField(max_length=280, unique=True, blank=True)
-    category = models.CharField(max_length=40, choices=CATEGORY_CHOICES, default=CATEGORY_ANNUAL)
-    year = models.PositiveIntegerField(null=True, blank=True)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=220, unique=True, blank=True)
+    category = models.CharField(max_length=40, choices=CATEGORIES, default="other", db_index=True)
+    year = models.PositiveIntegerField(null=True, blank=True, db_index=True)
     description = models.TextField(blank=True)
-    file = models.FileField(upload_to="publications/%Y/")
+    file = models.FileField(upload_to="publications/%Y/%m/")
     file_size = models.PositiveBigIntegerField(default=0)
-    file_type = models.CharField(max_length=80, blank=True)
-    published = models.BooleanField(default=True)
-    order = models.IntegerField(default=0)
+    file_type = models.CharField(max_length=16, blank=True)
+    published = models.BooleanField(default=True, db_index=True)
     uploaded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="publications_uploaded",
+        on_delete=models.SET_NULL,
+        related_name="publications",
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["-year", "order", "-created_at"]
-        verbose_name = "Publication"
-        verbose_name_plural = "Publications"
+        ordering = ["-year", "-created_at"]
+        indexes = [models.Index(fields=["published", "category"])]
 
     def __str__(self):
-        return f"{self.title} ({self.year or 'n/a'})"
+        return self.title
 
     def save(self, *args, **kwargs):
-        if not self.slug:
-            base = slugify(self.title)[:250] or "publication"
-            slug = base
-            n = 1
-            while Publication.objects.filter(slug=slug).exclude(pk=self.pk).exists():
-                slug = f"{base}-{n}"
-                n += 1
-            self.slug = slug
-
-        if self.file:
+        if self.file and not self.file_size:
             try:
                 self.file_size = self.file.size
             except Exception:
-                self.file_size = self.file_size or 0
-
-            name = getattr(self.file, "name", "") or ""
-            ext = os.path.splitext(name)[1].lower().lstrip(".")
-            if ext:
-                self.file_type = ext
-
+                self.file_size = 0
+        if self.file and not self.file_type:
+            name = self.file.name or ""
+            ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+            self.file_type = ext
+        if not self.slug:
+            base = slugify(self.title)[:200] or "publication"
+            slug = base
+            n = 1
+            while Publication.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                n += 1
+                slug = f"{base}-{n}"
+            self.slug = slug
         super().save(*args, **kwargs)
+
+    @property
+    def category_label(self):
+        return dict(self.CATEGORIES).get(self.category, self.category)
+
+    @property
+    def file_size_display(self):
+        size = self.file_size or 0
+        if size <= 0:
+            return ""
+        units = ["B", "KB", "MB", "GB"]
+        i = 0
+        s = float(size)
+        while s >= 1024 and i < len(units) - 1:
+            s /= 1024
+            i += 1
+        return f"{s:.0f} {units[i]}" if i == 0 else f"{s:.1f} {units[i]}"
