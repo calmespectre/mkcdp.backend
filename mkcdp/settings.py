@@ -10,7 +10,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-insecure-key-change-me")
 DEBUG = True
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
+
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "0.0.0.0",
+    "mkcdp.vercel.app",
+    "www.mkcdp.vercel.app",
+    "mkcdp.org",
+    "www.mkcdp.org",
+    "api.mkcdp.org",
+]
 
 INSTALLED_APPS = [
     "daphne",
@@ -40,8 +50,7 @@ INSTALLED_APPS = [
     "safeguarding",
     "notifications",
     "dashboard",
-    "publications",   
-    # "sitecontent",
+    "publications",
 ]
 
 MIDDLEWARE = [
@@ -99,9 +108,6 @@ TIME_ZONE = "Africa/Nairobi"
 USE_I18N = True
 USE_TZ = True
 
-FILE_UPLOAD_MAX_MEMORY_SIZE = 6 * 1024 * 1024
-DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024
-
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
@@ -109,6 +115,9 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+FILE_UPLOAD_MAX_MEMORY_SIZE = 6 * 1024 * 1024
+DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -183,6 +192,10 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:5175",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://mkcdp.vercel.app",
+    "https://www.mkcdp.vercel.app",
+    "https://mkcdp.org",
+    "https://www.mkcdp.org",
 ]
 
 CHANNEL_LAYERS = {
@@ -245,8 +258,6 @@ SPECTACULAR_SETTINGS = {
     "COMPONENT_SPLIT_REQUEST": True,
 }
 
-FILE_UPLOAD_MAX_MEMORY_SIZE = 6 * 1024 * 1024
-DATA_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
