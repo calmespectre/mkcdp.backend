@@ -1,6 +1,7 @@
 import os
 from datetime import timedelta
 from pathlib import Path
+
 import dj_database_url
 from dotenv import load_dotenv
 
@@ -9,20 +10,23 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-insecure-key-change-me")
-DEBUG = True
+
+DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() in ("true", "1", "yes")
 
 ALLOWED_HOSTS = [
-    "localhost",
-    "127.0.0.1",
-    "0.0.0.0",
-    "mkcdp-backend.onrender.com",
-    ".onrender.com",
-    "mkcdp.vercel.app",
-    "www.mkcdp.vercel.app",
-    "mkcdp.org",
-    "www.mkcdp.org",
-    "api.mkcdp.org",
+    host.strip()
+    for host in os.getenv(
+        "ALLOWED_HOSTS",
+        "localhost,127.0.0.1,0.0.0.0,mkcdp-backend.onrender.com,.onrender.com,mkcdp.vercel.app,www.mkcdp.vercel.app,mkcdp.org,www.mkcdp.org,api.mkcdp.org",
+    ).split(",")
+    if host.strip()
 ]
+
+if DEBUG and not os.getenv("ALLOWED_HOSTS"):
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
+
+if not DEBUG and SECRET_KEY == "dev-insecure-key-change-me":
+    raise ValueError("DJANGO_SECRET_KEY must be configured in production.")
 
 INSTALLED_APPS = [
     "daphne",
@@ -75,7 +79,10 @@ WSGI_APPLICATION = "mkcdp.wsgi.application"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates", BASE_DIR / "notifications" / "templates"],
+        "DIRS": [
+            BASE_DIR / "templates",
+            BASE_DIR / "notifications" / "templates",
+        ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -90,7 +97,7 @@ TEMPLATES = [
 
 DATABASES = {
     "default": dj_database_url.config(
-        default="sqlite:///db.sqlite3",
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
         conn_max_age=600,
         conn_health_checks=True,
     )
@@ -99,10 +106,19 @@ DATABASES = {
 AUTH_USER_MODEL = "accounts.User"
 
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 6}},
-    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
-    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {"min_length": 6},
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"
+    },
 ]
 
 LANGUAGE_CODE = "en-us"
@@ -167,7 +183,15 @@ SIMPLE_JWT = {
     "USER_ID_CLAIM": "user_id",
 }
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    origin.strip().rstrip("/")
+    for origin in os.getenv(
+        "CORS_ALLOWED_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:5175,http://127.0.0.1:5175,http://localhost:3000,http://127.0.0.1:3000,https://mkcdp.vercel.app,https://www.mkcdp.vercel.app,https://mkcdp.org,https://www.mkcdp.org",
+    ).split(",")
+    if origin.strip()
+]
+
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOW_HEADERS = [
@@ -183,32 +207,43 @@ CORS_ALLOW_HEADERS = [
     "x-request-id",
 ]
 
-CORS_ALLOW_METHODS = ["DELETE", "GET", "OPTIONS", "PATCH", "POST", "PUT"]
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+]
 
 CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:5174",
-    "http://127.0.0.1:5174",
-    "http://localhost:5175",
-    "http://127.0.0.1:5175",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "https://mkcdp.vercel.app",
-    "https://www.mkcdp.vercel.app",
-    "https://mkcdp.org",
-    "https://www.mkcdp.org",
+    origin.strip().rstrip("/")
+    for origin in os.getenv(
+        "CSRF_TRUSTED_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:5175,http://127.0.0.1:5175,http://localhost:3000,http://127.0.0.1:3000,https://mkcdp.vercel.app,https://www.mkcdp.vercel.app,https://mkcdp.org,https://www.mkcdp.org,https://api.mkcdp.org",
+    ).split(",")
+    if origin.strip()
 ]
 
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {"hosts": [os.getenv("REDIS_URL", "redis://localhost:6379/0")]},
-    }
+        "CONFIG": {
+            "hosts": [
+                os.getenv("REDIS_URL", "redis://localhost:6379/0")
+            ],
+        },
+    },
 }
 
-CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://localhost:6379/1")
-CELERY_RESULT_BACKEND = os.getenv("REDIS_URL", "redis://localhost:6379/2")
+CELERY_BROKER_URL = os.getenv(
+    "REDIS_URL",
+    "redis://localhost:6379/1",
+)
+CELERY_RESULT_BACKEND = os.getenv(
+    "REDIS_URL",
+    "redis://localhost:6379/2",
+)
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
@@ -216,11 +251,38 @@ CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 600
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
-CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_ALWAYS_EAGER = os.getenv(
+    "CELERY_TASK_ALWAYS_EAGER",
+    "False" if not DEBUG else "True",
+).lower() in ("true", "1", "yes")
 CELERY_TASK_EAGER_PROPAGATES = True
 
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "MKCDP <noreply@mkcdp.org>")
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.console.EmailBackend" if DEBUG
+    else "django.core.mail.backends.smtp.EmailBackend",
+)
+
+DEFAULT_FROM_EMAIL = os.getenv(
+    "DEFAULT_FROM_EMAIL",
+    "MKCDP <noreply@mkcdp.org>",
+)
+
+EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp-relay.brevo.com")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True").lower() in (
+    "true",
+    "1",
+    "yes",
+)
+EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "False").lower() in (
+    "true",
+    "1",
+    "yes",
+)
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_TIMEOUT = 20
 
 MPESA = {
     "ENVIRONMENT": os.getenv("MPESA_ENVIRONMENT", "sandbox"),
@@ -246,11 +308,17 @@ BANK = {
     "SWIFT": os.getenv("BANK_SWIFT", ""),
 }
 
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+FRONTEND_URL = os.getenv(
+    "FRONTEND_URL",
+    "http://localhost:5173",
+)
+
 EXCHANGE_RATE_API_URL = os.getenv("EXCHANGE_RATE_API_URL", "")
 
 CODE_TTL_MINUTES = int(os.getenv("CODE_TTL_MINUTES", "10"))
-SIGNIN_INACTIVITY_DAYS = int(os.getenv("SIGNIN_INACTIVITY_DAYS", "14"))
+SIGNIN_INACTIVITY_DAYS = int(
+    os.getenv("SIGNIN_INACTIVITY_DAYS", "14")
+)
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "MKCDP API",
@@ -260,15 +328,35 @@ SPECTACULAR_SETTINGS = {
     "COMPONENT_SPLIT_REQUEST": True,
 }
 
-ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+ALLOWED_IMAGE_TYPES = {
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+}
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-SECURE_SSL_REDIRECT = False
-SESSION_COOKIE_SECURE = False
-CSRF_COOKIE_SECURE = False
-SECURE_HSTS_SECONDS = 0
-SECURE_HSTS_INCLUDE_SUBDOMAINS = False
-SECURE_HSTS_PRELOAD = False
+
+SECURE_SSL_REDIRECT = os.getenv(
+    "DJANGO_SECURE_SSL_REDIRECT",
+    "False" if DEBUG else "True",
+).lower() in ("true", "1", "yes")
+
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+
+SECURE_HSTS_SECONDS = int(
+    os.getenv("SECURE_HSTS_SECONDS", "0")
+)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = os.getenv(
+    "SECURE_HSTS_INCLUDE_SUBDOMAINS",
+    "False",
+).lower() in ("true", "1", "yes")
+SECURE_HSTS_PRELOAD = os.getenv(
+    "SECURE_HSTS_PRELOAD",
+    "False",
+).lower() in ("true", "1", "yes")
+
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "same-origin"
 X_FRAME_OPTIONS = "DENY"
@@ -277,14 +365,31 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
-        "verbose": {"format": "{asctime} {levelname} {name} {message}", "style": "{"},
+        "verbose": {
+            "format": "{asctime} {levelname} {name} {message}",
+            "style": "{",
+        },
     },
     "handlers": {
-        "console": {"class": "logging.StreamHandler", "formatter": "verbose"},
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
     },
-    "root": {"handlers": ["console"], "level": "INFO"},
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
     "loggers": {
-        "django.security": {"handlers": ["console"], "level": "WARNING", "propagate": False},
-        "payments": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "django.security": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        "payments": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
     },
 }
