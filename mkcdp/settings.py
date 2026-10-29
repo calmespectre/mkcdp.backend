@@ -15,6 +15,8 @@ ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
     "0.0.0.0",
+    "mkcdp-backend.onrender.com",
+    ".onrender.com",
     "mkcdp.vercel.app",
     "www.mkcdp.vercel.app",
     "mkcdp.org",
