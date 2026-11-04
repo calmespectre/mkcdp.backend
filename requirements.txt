@@ -19,3 +19,5 @@ gunicorn==23.0.0
 whitenoise==6.9.0
 drf-spectacular==0.28.0
 django-ratelimit==4.1.0
+cloudinary>=1.44.1
+django-cloudinary-storage>=0.3.0
