@@ -5,13 +5,22 @@ from pathlib import Path
 import dj_database_url
 from dotenv import load_dotenv
 
-load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-insecure-key-change-me")
+load_dotenv(BASE_DIR / ".env")
 
-DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() in ("true", "1", "yes")
+
+SECRET_KEY = os.getenv(
+    "DJANGO_SECRET_KEY",
+    "dev-insecure-key-change-me",
+)
+
+DEBUG = os.getenv(
+    "DJANGO_DEBUG",
+    "False",
+).lower() in ("true", "1", "yes")
+
 
 ALLOWED_HOSTS = [
     host.strip()
@@ -23,29 +32,89 @@ ALLOWED_HOSTS = [
 ]
 
 if DEBUG and not os.getenv("ALLOWED_HOSTS"):
-    ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
+    ALLOWED_HOSTS = [
+        "localhost",
+        "127.0.0.1",
+        "0.0.0.0",
+    ]
 
 if not DEBUG and SECRET_KEY == "dev-insecure-key-change-me":
-    raise ValueError("DJANGO_SECRET_KEY must be configured in production.")
+    raise ValueError(
+        "DJANGO_SECRET_KEY must be configured in production."
+    )
+
+
+CLOUDINARY_CLOUD_NAME = os.getenv(
+    "CLOUDINARY_CLOUD_NAME",
+    "",
+).strip()
+
+CLOUDINARY_API_KEY = os.getenv(
+    "CLOUDINARY_API_KEY",
+    "",
+).strip()
+
+CLOUDINARY_API_SECRET = os.getenv(
+    "CLOUDINARY_API_SECRET",
+    "",
+).strip()
+
+CLOUDINARY_CONFIGURED = all([
+    CLOUDINARY_CLOUD_NAME,
+    CLOUDINARY_API_KEY,
+    CLOUDINARY_API_SECRET,
+])
+
+if not DEBUG and not CLOUDINARY_CONFIGURED:
+    raise ValueError(
+        "Cloudinary credentials must be configured in production. "
+        "Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY "
+        "and CLOUDINARY_API_SECRET."
+    )
+
+CLOUDINARY_STORAGE = {
+    "CLOUD_NAME": CLOUDINARY_CLOUD_NAME,
+    "API_KEY": CLOUDINARY_API_KEY,
+    "API_SECRET": CLOUDINARY_API_SECRET,
+}
+
+STORAGES = {
+    "default": {
+        "BACKEND": (
+            "cloudinary_storage.storage.MediaCloudinaryStorage"
+            if CLOUDINARY_CONFIGURED
+            else "django.core.files.storage.FileSystemStorage"
+        ),
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
 
 INSTALLED_APPS = [
     "daphne",
+
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+
     "cloudinary_storage",
     "cloudinary",
+
     "rest_framework",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
+
     "corsheaders",
     "django_filters",
     "channels",
     "django_celery_beat",
     "drf_spectacular",
+
     "core",
     "accounts",
     "content",
@@ -61,22 +130,29 @@ INSTALLED_APPS = [
     "publications",
 ]
 
+
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+
     "core.middleware.RequestIDMiddleware",
 ]
 
+
 ROOT_URLCONF = "mkcdp.urls"
+
 ASGI_APPLICATION = "mkcdp.asgi.application"
+
 WSGI_APPLICATION = "mkcdp.wsgi.application"
+
 
 TEMPLATES = [
     {
@@ -97,6 +173,7 @@ TEMPLATES = [
     },
 ]
 
+
 DATABASES = {
     "default": dj_database_url.config(
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
@@ -105,80 +182,89 @@ DATABASES = {
     )
 }
 
+
 AUTH_USER_MODEL = "accounts.User"
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-        "OPTIONS": {"min_length": 6},
+        "OPTIONS": {
+            "min_length": 6,
+        },
     },
     {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
+
 LANGUAGE_CODE = "en-us"
+
 TIME_ZONE = "Africa/Nairobi"
+
 USE_I18N = True
+
 USE_TZ = True
 
+
 STATIC_URL = "/static/"
+
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 MEDIA_URL = "/media/"
+
 MEDIA_ROOT = BASE_DIR / "media"
 
-CLOUDINARY_STORAGE = {
-    "CLOUD_NAME": os.getenv("CLOUDINARY_CLOUD_NAME"),
-    "API_KEY": os.getenv("CLOUDINARY_API_KEY"),
-    "API_SECRET": os.getenv("CLOUDINARY_API_SECRET"),
-}
-
-STORAGES = {
-    "default": {
-        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
-    },
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    },
-}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+
 FILE_UPLOAD_MAX_MEMORY_SIZE = 6 * 1024 * 1024
+
 DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024
+
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
+
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.AllowAny",
     ),
+
     "DEFAULT_PARSER_CLASSES": (
         "rest_framework.parsers.JSONParser",
         "rest_framework.parsers.MultiPartParser",
         "rest_framework.parsers.FormParser",
     ),
+
     "DEFAULT_PAGINATION_CLASS": "core.pagination.StandardPagination",
+
     "PAGE_SIZE": 20,
+
     "DEFAULT_FILTER_BACKENDS": (
         "django_filters.rest_framework.DjangoFilterBackend",
         "rest_framework.filters.SearchFilter",
         "rest_framework.filters.OrderingFilter",
     ),
+
     "EXCEPTION_HANDLER": "core.exceptions.custom_exception_handler",
+
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+
     "DEFAULT_THROTTLE_CLASSES": (
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
     ),
+
     "DEFAULT_THROTTLE_RATES": {
         "anon": "60/min",
         "user": "300/min",
@@ -187,18 +273,29 @@ REST_FRAMEWORK = {
     },
 }
 
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+
     "REFRESH_TOKEN_LIFETIME": timedelta(days=90),
+
     "ROTATE_REFRESH_TOKENS": True,
+
     "BLACKLIST_AFTER_ROTATION": False,
+
     "UPDATE_LAST_LOGIN": False,
+
     "ALGORITHM": "HS256",
+
     "SIGNING_KEY": SECRET_KEY,
+
     "AUTH_HEADER_TYPES": ("Bearer",),
+
     "USER_ID_FIELD": "id",
+
     "USER_ID_CLAIM": "user_id",
 }
+
 
 CORS_ALLOWED_ORIGINS = [
     origin.strip().rstrip("/")
@@ -209,7 +306,9 @@ CORS_ALLOWED_ORIGINS = [
     if origin.strip()
 ]
 
+
 CORS_ALLOW_CREDENTIALS = True
+
 
 CORS_ALLOW_HEADERS = [
     "accept",
@@ -224,6 +323,7 @@ CORS_ALLOW_HEADERS = [
     "x-request-id",
 ]
 
+
 CORS_ALLOW_METHODS = [
     "DELETE",
     "GET",
@@ -232,6 +332,7 @@ CORS_ALLOW_METHODS = [
     "POST",
     "PUT",
 ]
+
 
 CSRF_TRUSTED_ORIGINS = [
     origin.strip().rstrip("/")
@@ -242,37 +343,55 @@ CSRF_TRUSTED_ORIGINS = [
     if origin.strip()
 ]
 
+
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
             "hosts": [
-                os.getenv("REDIS_URL", "redis://localhost:6379/0")
+                os.getenv(
+                    "REDIS_URL",
+                    "redis://localhost:6379/0",
+                ),
             ],
         },
     },
 }
 
+
 CELERY_BROKER_URL = os.getenv(
     "REDIS_URL",
     "redis://localhost:6379/1",
 )
+
 CELERY_RESULT_BACKEND = os.getenv(
     "REDIS_URL",
     "redis://localhost:6379/2",
 )
+
 CELERY_TASK_SERIALIZER = "json"
+
 CELERY_RESULT_SERIALIZER = "json"
+
 CELERY_ACCEPT_CONTENT = ["json"]
+
 CELERY_TIMEZONE = TIME_ZONE
+
 CELERY_TASK_TRACK_STARTED = True
+
 CELERY_TASK_TIME_LIMIT = 600
-CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+CELERY_BEAT_SCHEDULER = (
+    "django_celery_beat.schedulers:DatabaseScheduler"
+)
+
 CELERY_TASK_ALWAYS_EAGER = os.getenv(
     "CELERY_TASK_ALWAYS_EAGER",
     "False" if not DEBUG else "True",
 ).lower() in ("true", "1", "yes")
+
 CELERY_TASK_EAGER_PROPAGATES = True
+
 
 EMAIL_BACKEND = os.getenv(
     "EMAIL_BACKEND",
@@ -286,65 +405,155 @@ DEFAULT_FROM_EMAIL = os.getenv(
     "MKCDP <noreply@mkcdp.org>",
 )
 
-EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp-relay.brevo.com")
-EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
-EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True").lower() in (
-    "true",
-    "1",
-    "yes",
+EMAIL_HOST = os.getenv(
+    "EMAIL_HOST",
+    "smtp-relay.brevo.com",
 )
-EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "False").lower() in (
-    "true",
-    "1",
-    "yes",
+
+EMAIL_PORT = int(
+    os.getenv("EMAIL_PORT", "587")
 )
-EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+
+EMAIL_USE_TLS = os.getenv(
+    "EMAIL_USE_TLS",
+    "True",
+).lower() in ("true", "1", "yes")
+
+EMAIL_USE_SSL = os.getenv(
+    "EMAIL_USE_SSL",
+    "False",
+).lower() in ("true", "1", "yes")
+
+EMAIL_HOST_USER = os.getenv(
+    "EMAIL_HOST_USER",
+    "",
+)
+
+EMAIL_HOST_PASSWORD = os.getenv(
+    "EMAIL_HOST_PASSWORD",
+    "",
+)
+
 EMAIL_TIMEOUT = 20
 
+
 MPESA = {
-    "ENVIRONMENT": os.getenv("MPESA_ENVIRONMENT", "sandbox"),
-    "CONSUMER_KEY": os.getenv("MPESA_CONSUMER_KEY", ""),
-    "CONSUMER_SECRET": os.getenv("MPESA_CONSUMER_SECRET", ""),
-    "SHORTCODE": os.getenv("MPESA_SHORTCODE", ""),
-    "PASSKEY": os.getenv("MPESA_PASSKEY", ""),
-    "CALLBACK_URL": os.getenv("MPESA_CALLBACK_URL", ""),
+    "ENVIRONMENT": os.getenv(
+        "MPESA_ENVIRONMENT",
+        "sandbox",
+    ),
+
+    "CONSUMER_KEY": os.getenv(
+        "MPESA_CONSUMER_KEY",
+        "",
+    ),
+
+    "CONSUMER_SECRET": os.getenv(
+        "MPESA_CONSUMER_SECRET",
+        "",
+    ),
+
+    "SHORTCODE": os.getenv(
+        "MPESA_SHORTCODE",
+        "",
+    ),
+
+    "PASSKEY": os.getenv(
+        "MPESA_PASSKEY",
+        "",
+    ),
+
+    "CALLBACK_URL": os.getenv(
+        "MPESA_CALLBACK_URL",
+        "",
+    ),
 }
+
 
 CARD = {
-    "PROVIDER": os.getenv("CARD_PROVIDER", "stripe"),
-    "SECRET_KEY": os.getenv("CARD_SECRET_KEY", ""),
-    "PUBLISHABLE_KEY": os.getenv("CARD_PUBLISHABLE_KEY", ""),
-    "WEBHOOK_SECRET": os.getenv("CARD_WEBHOOK_SECRET", ""),
+    "PROVIDER": os.getenv(
+        "CARD_PROVIDER",
+        "stripe",
+    ),
+
+    "SECRET_KEY": os.getenv(
+        "CARD_SECRET_KEY",
+        "",
+    ),
+
+    "PUBLISHABLE_KEY": os.getenv(
+        "CARD_PUBLISHABLE_KEY",
+        "",
+    ),
+
+    "WEBHOOK_SECRET": os.getenv(
+        "CARD_WEBHOOK_SECRET",
+        "",
+    ),
 }
 
+
 BANK = {
-    "NAME": os.getenv("BANK_NAME", ""),
-    "ACCOUNT_NAME": os.getenv("BANK_ACCOUNT_NAME", ""),
-    "ACCOUNT_NUMBER": os.getenv("BANK_ACCOUNT_NUMBER", ""),
-    "BRANCH": os.getenv("BANK_BRANCH", ""),
-    "SWIFT": os.getenv("BANK_SWIFT", ""),
+    "NAME": os.getenv(
+        "BANK_NAME",
+        "",
+    ),
+
+    "ACCOUNT_NAME": os.getenv(
+        "BANK_ACCOUNT_NAME",
+        "",
+    ),
+
+    "ACCOUNT_NUMBER": os.getenv(
+        "BANK_ACCOUNT_NUMBER",
+        "",
+    ),
+
+    "BRANCH": os.getenv(
+        "BANK_BRANCH",
+        "",
+    ),
+
+    "SWIFT": os.getenv(
+        "BANK_SWIFT",
+        "",
+    ),
 }
+
 
 FRONTEND_URL = os.getenv(
     "FRONTEND_URL",
     "http://localhost:5173",
 )
 
-EXCHANGE_RATE_API_URL = os.getenv("EXCHANGE_RATE_API_URL", "")
 
-CODE_TTL_MINUTES = int(os.getenv("CODE_TTL_MINUTES", "10"))
+EXCHANGE_RATE_API_URL = os.getenv(
+    "EXCHANGE_RATE_API_URL",
+    "",
+)
+
+
+CODE_TTL_MINUTES = int(
+    os.getenv("CODE_TTL_MINUTES", "10")
+)
+
 SIGNIN_INACTIVITY_DAYS = int(
     os.getenv("SIGNIN_INACTIVITY_DAYS", "14")
 )
 
+
 SPECTACULAR_SETTINGS = {
     "TITLE": "MKCDP API",
+
     "DESCRIPTION": "Backend for MKCDP NGO platform",
+
     "VERSION": "1.0.0",
+
     "SERVE_INCLUDE_SCHEMA": False,
+
     "COMPONENT_SPLIT_REQUEST": True,
 }
+
 
 ALLOWED_IMAGE_TYPES = {
     "image/jpeg",
@@ -354,57 +563,77 @@ ALLOWED_IMAGE_TYPES = {
     "image/svg+xml",
 }
 
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+SECURE_PROXY_SSL_HEADER = (
+    "HTTP_X_FORWARDED_PROTO",
+    "https",
+)
+
 
 SECURE_SSL_REDIRECT = os.getenv(
     "DJANGO_SECURE_SSL_REDIRECT",
     "False" if DEBUG else "True",
 ).lower() in ("true", "1", "yes")
 
+
 SESSION_COOKIE_SECURE = not DEBUG
+
 CSRF_COOKIE_SECURE = not DEBUG
+
 
 SECURE_HSTS_SECONDS = int(
     os.getenv("SECURE_HSTS_SECONDS", "0")
 )
+
 SECURE_HSTS_INCLUDE_SUBDOMAINS = os.getenv(
     "SECURE_HSTS_INCLUDE_SUBDOMAINS",
     "False",
 ).lower() in ("true", "1", "yes")
+
 SECURE_HSTS_PRELOAD = os.getenv(
     "SECURE_HSTS_PRELOAD",
     "False",
 ).lower() in ("true", "1", "yes")
 
+
 SECURE_CONTENT_TYPE_NOSNIFF = True
+
 SECURE_REFERRER_POLICY = "same-origin"
+
 X_FRAME_OPTIONS = "DENY"
+
 
 LOGGING = {
     "version": 1,
+
     "disable_existing_loggers": False,
+
     "formatters": {
         "verbose": {
             "format": "{asctime} {levelname} {name} {message}",
             "style": "{",
         },
     },
+
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
             "formatter": "verbose",
         },
     },
+
     "root": {
         "handlers": ["console"],
         "level": "INFO",
     },
+
     "loggers": {
         "django.security": {
             "handlers": ["console"],
             "level": "WARNING",
             "propagate": False,
         },
+
         "payments": {
             "handlers": ["console"],
             "level": "INFO",
