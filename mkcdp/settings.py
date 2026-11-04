@@ -335,6 +335,9 @@ ALLOWED_IMAGE_TYPES = {
     "image/gif",
 }
 
+STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 SECURE_SSL_REDIRECT = os.getenv(
